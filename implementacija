@@ -1,0 +1,406 @@
+#include<iostream>
+#include<cstdlib>
+#include<ctime>
+#include"pokazivaci.h"
+//#include"polje.h"
+using namespace std;
+
+int n;
+double br=0;
+
+clock_t vrijeme1,vrijeme2;
+
+double razlika;
+
+void unos(char *znakovni_niz){
+  cin.getline(znakovni_niz, 150);
+	if (cin.gcount()==1)
+	  	 cin.getline (znakovni_niz,150);
+}
+
+void prioritet(int ci){
+	switch(ci){
+	case 1:
+		cout<<"umirovljenik";
+		break;
+	case 2:
+		cout<<"invalid";
+		break;
+	case 3:
+		cout<<"trudnica";
+		break;
+	case 4:
+		cout<<"VIP klijent";
+		break;
+	case 5:
+		cout<<"klijent";
+		break;
+	case 6:
+		cout<<"nije klijent";}
+}
+
+void transakcija(int di){
+	switch(di){
+	case 1:
+		cout<<"uplata";
+		break;
+	case 2:
+		cout<<"isplata";
+		break;
+	case 3:
+		cout<<"placanje racuna";
+		break;
+	case 4:
+		cout<<"krediti";
+		break;}
+}
+
+double vrijeme_pocetak(){
+  vrijeme1=clock();
+	return (double)vrijeme1;
+}
+
+double vrijeme_kraj(){
+	vrijeme2=clock();
+	return (double)vrijeme2;
+}
+
+double vrijeme_proteklo(){
+	razlika=vrijeme2-vrijeme1;
+	return razlika;
+}
+
+tm *upis_datum(char * pom_datum){
+    tm *priv = new tm();
+    priv->tm_mday = (((int)pom_datum[0]-(int)'0')*10 + ((int)pom_datum[1]-(int)'0'));
+    priv->tm_mon = (((int)pom_datum[3]-(int)'0')*10 + ((int)pom_datum[4]-(int)'0') -1);
+    priv->tm_year = (((int)pom_datum[6]-(int)'0')*1000 + ((int)pom_datum[7]-(int)'0')*100 +
+		((int)pom_datum[8]-(int)'0')*10 + ((int)pom_datum[9]-(int)'0') - 1900);
+    return priv;
+}
+
+bool provjera_datum(tm * datum){
+     if (datum->tm_mday<1 || datum->tm_mday>31 || datum->tm_mon<0 || datum->tm_mon>11) return false;
+     else return true;
+}
+
+void dolazak_na_salter (int ai){
+	double vrijeme=0;
+	while(vrijeme<ai*5){
+		vrijeme_pocetak();
+		vrijeme_kraj();
+		vrijeme+=vrijeme_proteklo();}
+}
+
+void odlazak_sa_saltera (int bi){
+	double vrijeme=0;
+	while(vrijeme<bi*5){
+		vrijeme_pocetak();
+		vrijeme_kraj();
+		vrijeme+=vrijeme_proteklo();}
+}
+
+void cetvorke (klijent polje[]){
+	for (int i=0;i<n;i++){
+		polje[i].ai=rand()%501+100;
+		polje[i].bi=rand()%501+100;
+		polje[i].ci=rand()%6+1;
+		polje[i].di=rand()%4+1;
+		while(polje[i].di==2&&polje[i].ci==6)
+			polje[i].di=rand()%4+1;
+	}
+}
+
+void unos (klijent polje[], queue *Q){
+	char datum[11];
+	int i;
+	for (i=0;i<n;i++){
+		system("cls");
+		cout<<"UPIS "<<i+1<<". KLIJENTA\n";
+		cout<<"----------------------\n";
+		cout<<"unesite ime i prezime klijenta: ";
+		unos(polje[i].ime_prezime);
+		do{
+			cout<<"unesite datum rodenja klijenta (dd/mm/gggg): ";
+			unos(datum);
+			polje[i].datum_rodenja=upis_datum(datum);
+		}while(!provjera_datum(polje[i].datum_rodenja));
+		cout<<"unesite stanje na tekucem racunu (u kn): ";
+		cin>>polje[i].tekuci;
+		cout<<"unesite stanje na deviznom racunu (u eurima): ";
+		cin>>polje[i].devizni;
+		cout<<"klijent ulazi u red\n";
+		int p;
+		klijent pom;
+		p=i;
+		while(p>0){
+			if(polje[p].ci<polje[p-1].ci){
+				cout<<"klijent "<<polje[p].ime_prezime<<" je ";
+				prioritet(polje[p].ci);
+				cout<<" te ide ispred klijenta "<<polje[p-1].ime_prezime<<" (";
+				prioritet(polje[p-1].ci);
+				cout<<")\n";
+				memcpy(&pom,&polje[p],sizeof(pom));
+				memcpy(&polje[p],&polje[p-1],sizeof(polje[p]));
+				memcpy(&polje[p-1],&pom,sizeof(polje[p]));
+				p--;}
+			else break;}
+		system("pause");}
+	system("cls");
+	for(int i=0;i<n;i++){
+		EnQueueQ(polje[i],Q);
+		br++;}
+	klijent trenutni;
+	queue *pomQ=new queue();
+	InitQ(pomQ);
+	cout<<"\nISPIS SVIH KLIJENATA KOJI IMAJU VISE OD 10 000 U STANOJ VALUTI\n";
+	cout<<"--------------------------------------------------------------\n";
+	while(!IsEmptyQ(Q)){
+		trenutni=FrontQ(Q);
+		DeQueueQ(Q);
+		if(trenutni.devizni>1400){
+			cout<<"ime i prezime klijenta: "<<trenutni.ime_prezime<<endl;
+			cout<<"datum rodenja klijenta: "<<trenutni.datum_rodenja->tm_mday << "/" 
+				<<trenutni.datum_rodenja->tm_mon+1 << "/" << trenutni.datum_rodenja->tm_year+1900<<endl;
+			cout<<"stanje na tekucem racunu (u kunama): "<<trenutni.tekuci<<endl;
+			cout<<"stanje na deviznom racunu (u eurima): "<<trenutni.devizni<<endl;
+			cout<<"----------------------------------------------\n";}
+		EnQueueQ(trenutni,pomQ);}
+	while(!IsEmptyQ(pomQ)){
+		trenutni=FrontQ(pomQ);
+		DeQueueQ(pomQ);
+		EnQueueQ(trenutni,Q);}
+	delete pomQ;
+}
+
+void simulacija (queue *Q){
+	queue *pomQ=new queue();
+	InitQ(pomQ);
+	klijent trenutni;
+	cout<<"SIMULACIJA\n";
+	cout<<"----------\n";
+	while(!IsEmptyQ(Q)){
+		trenutni=FrontQ(Q);
+		DeQueueQ(Q);
+		EnQueueQ(trenutni,pomQ);}
+	while(!IsEmptyQ(pomQ)){
+		trenutni=FrontQ(pomQ);
+		DeQueueQ(pomQ);
+		dolazak_na_salter(trenutni.ai);
+		cout<<"klijent "<<trenutni.ime_prezime<<" je dosao na salter\n";
+		odlazak_sa_saltera(trenutni.bi);
+		cout<<"klijent "<<trenutni.ime_prezime<<" je otisao sa saltera\n";
+		EnQueueQ(trenutni,Q);}
+	delete pomQ;
+}
+
+void stanje (queue *Q){
+	queue *pomQ=new queue();
+	InitQ(pomQ);
+	klijent trenutni;
+	while(!IsEmptyQ(Q)){
+		trenutni=FrontQ(Q);
+		DeQueueQ(Q);
+		EnQueueQ(trenutni,pomQ);}
+	while(!IsEmptyQ(pomQ)){
+		trenutni=FrontQ(pomQ);
+		DeQueueQ(pomQ);
+		cout<<"ime klijenta: "<<trenutni.ime_prezime<<endl;
+		cout<<"datum rodenja klijenta: "<<trenutni.datum_rodenja->tm_mday << "/" 
+			<<trenutni.datum_rodenja->tm_mon+1 << "/" << trenutni.datum_rodenja->tm_year+1900<<endl;
+		cout<<"stanje na tekucem racunu: "<<trenutni.tekuci<<" kn\n";
+		cout<<"stanje na deviznom racunu: "<<trenutni.devizni<<" eura\n";
+		cout<<"status: ";
+		prioritet(trenutni.ci);
+		cout<<endl;
+		cout<<"vrsta transakcije: ";
+		transakcija(trenutni.di);
+		cout<<endl;
+		cout<<"------------------------------\n";
+		EnQueueQ(trenutni,Q);}
+	delete pomQ;
+}
+
+void brzi (queue *Q, queue *brziQ){
+	queue *pomQ=new queue();
+	InitQ(pomQ);
+	klijent trenutni;
+	while(!IsEmptyQ(Q)){
+		trenutni=FrontQ(Q);
+		DeQueueQ(Q);	
+		if(trenutni.di==3) {
+			EnQueueQ(trenutni,brziQ);
+			br--;}
+		else EnQueueQ(trenutni,pomQ);}
+	while(!IsEmptyQ(pomQ)){
+		trenutni=FrontQ(pomQ);
+		DeQueueQ(pomQ);
+		EnQueueQ(trenutni,Q);}
+	delete pomQ;
+}
+
+void brisanje (queue *Q){
+	queue *pomQ=new queue();
+	InitQ(pomQ);
+	klijent trenutni;
+	time_t now=time(0);
+	tm *ltm=localtime(&now);
+	tm *pom_datum=new tm();
+	pom_datum=ltm;
+	time_t konac_dat=mktime(pom_datum);
+	while(!IsEmptyQ(Q)){
+		trenutni=FrontQ(Q);
+		DeQueueQ(Q);
+		time_t dat_rod=mktime(trenutni.datum_rodenja);
+		razlika=difftime(konac_dat,dat_rod)/31556926;
+		if(!((trenutni.ci==4&&razlika<30&&trenutni.di==1&&trenutni.tekuci<100)||(trenutni.ci==1&&trenutni.di==2&&trenutni.tekuci>5000)))
+			EnQueueQ(trenutni,pomQ);
+		else br--;}
+	while(!IsEmptyQ(pomQ)){
+		trenutni=FrontQ(pomQ);
+		DeQueueQ(pomQ);
+		EnQueueQ(trenutni,Q);}
+	delete pomQ;
+}
+
+void novi_red (queue *Q,queue *noviQ, float a){
+	if(IsEmptyQ(Q)) return;
+	klijent trenutni=FrontQ(Q);
+	DeQueueQ(Q);
+	novi_red(Q,noviQ,a);
+	br--;
+	if(br>=a) EnQueueQ(trenutni,noviQ);
+	else EnQueueQ(trenutni,Q);
+}
+
+void vracanje (queue *Q){
+	if(IsEmptyQ(Q)) return;
+	klijent trenutni=FrontQ(Q);
+	DeQueueQ(Q);
+	vracanje(Q);
+	EnQueueQ(trenutni,Q);
+}
+
+void delQ (queue*Q){
+	while(!IsEmptyQ(Q))
+		DeQueueQ(Q);
+	delete Q;
+}
+
+int main(){
+	int izbor;
+	double a;
+	queue *Q=new queue();
+	InitQ(Q);
+	queue *brziQ=new queue();
+	InitQ(brziQ);
+	queue *noviQ=new queue();
+	InitQ(noviQ);
+	cout<<"broj cetvorki koji zelite generirati: ";
+	cin>>n;
+	klijent *polje=new klijent[n];
+	cetvorke(polje);
+	do{
+		system("cls");
+		cout<<"IZBORNIK\n";
+		cout<<"--------\n";
+		cout<<"1 - unos klijenata\n";
+		cout<<"2 - ispis glavnog reda\n";
+		cout<<"3 - simulacija glavnog reda\n";
+		cout<<"4 - kreiranje brzog reda, ispis glavnog i brzog reda\n";
+		cout<<"5 - simulacija brzog reda\n";
+		cout<<"6 - brisanje iz glavnog reda svih VIP klijenata mladih od 30 kn\n" 
+			<<"    koji zele izvrsiti transakciju uplate\n"
+			<<"    a na racunu imaju manje od 100kn te svih umirovljenika\n" 
+			<<"    koji zele obaviti transakciju isplate, a na racunu\n"
+			<<"    imaju vise od 5000kn, ispis glavnog reda nakon brisanja\n";
+		cout<<"7 - simuacija otvaranja novog saltera, ispis glavnog i novog saltera\n";
+		cout<<"8 - simulacija novog saltera\n";
+		cout<<"0 - izlaz iz programa\n\n";
+		cout<<"Izbor: ";
+		cin>>izbor;
+		switch(izbor){
+		case 1:
+			system("cls");
+			unos(polje,Q);
+			break;
+		case 2:
+			if (IsEmptyQ(Q)){
+				cout<<"red je prazan\n";
+				break;}
+			system("cls");
+			cout<<"ISPIS GLAVNOG REDA\n";
+			cout<<"------------------\n";
+			stanje(Q);
+			break;
+		case 3:
+			if (IsEmptyQ(Q)){
+				cout<<"red je prazan\n";
+				break;}
+			system("cls");
+			simulacija(Q);
+			break;
+		case 4:
+			if (IsEmptyQ(Q)){
+				cout<<"red je prazan\n";
+				break;}
+			brzi(Q,brziQ);
+			system("cls");
+			cout<<"ISPIS GLAVNOG REDA\n";
+			cout<<"------------------\n";
+			stanje(Q);
+			cout<<endl;
+			cout<<"ISPIS BRZOG REDA\n";
+			cout<<"----------------\n";
+			stanje(brziQ);
+			break;
+		case 5:
+			if (IsEmptyQ(brziQ)){
+				cout<<"red je prazan\n";
+				break;}
+			system("cls");
+			simulacija(brziQ);
+			break;
+		case 6:
+			if (IsEmptyQ(Q)){
+				cout<<"red je prazan\n";
+				break;}
+			system("cls");
+			brisanje(Q);
+			cout<<"KLIJENTI SU OBRISANI!\n\n";
+			cout<<"ISPIS GLAVNOG REDA NAKOG BRISANJA\n";
+			cout<<"----------------------------------------\n";
+			stanje(Q);
+			break;
+		case 7:
+			if (IsEmptyQ(Q)){
+				cout<<"red je prazan\n";
+				break;}
+			a=0.7*br;
+			system("cls");
+			novi_red(Q,noviQ,a);
+			vracanje(Q);
+			cout<<"ISPIS GLAVNOG REDA\n";
+			cout<<"------------------\n";
+			stanje(Q);
+			cout<<endl;
+			cout<<"ISPIS BRZOG REDA\n";
+			cout<<"----------------\n";
+			stanje(noviQ);
+			break;
+		case 8:
+			if (IsEmptyQ(noviQ)){
+				cout<<"red je prazan\n";
+				break;}
+			system("cls");
+			simulacija(noviQ);
+			break;
+		}
+		system("pause");
+	}while(izbor!=0);
+	delQ(Q);
+	delQ(brziQ);
+	delQ(noviQ);
+	delete []polje;
+	return 0;
+}
