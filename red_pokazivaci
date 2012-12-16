@@ -1,0 +1,54 @@
+#include <iostream>
+using namespace std;
+
+struct klijent{
+  int ai,bi,ci,di;
+	char ime_prezime[50];
+	float tekuci,devizni;
+	tm *datum_rodenja;
+};
+
+struct qu{
+	klijent value;
+	struct qu *next;
+};
+
+struct que{
+	struct qu *front, *rear;
+};
+
+typedef struct que queue;
+typedef struct qu *element;
+
+bool IsEmptyQ (queue *Q){
+	if (Q->front==Q->rear) return true;
+	return false;
+}
+
+klijent FrontQ (queue *Q){
+	if (IsEmptyQ(Q)) cout<<"red je prazan\n";
+	else return Q->front->next->value;
+}
+
+void EnQueueQ (klijent x, queue *Q){
+	element newelement=new qu;
+	Q->rear->next=newelement;
+	Q->rear=newelement;
+	newelement->value=x;
+}
+
+void DeQueueQ (queue *Q){
+	if (IsEmptyQ(Q)){
+		cout<<"red je prazan\n";
+		return;}
+	element pom=new qu;
+	pom=Q->front;
+	Q->front=pom->next;
+	delete pom;
+}
+
+void InitQ (queue *Q){
+	element glava=new qu;
+	Q->front=glava;
+	Q->rear=glava;
+}
